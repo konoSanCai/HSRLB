@@ -37,12 +37,14 @@
   button{appearance:none; border:0; border-radius:999px; padding:13px 18px; color:#17120a; font-weight:900; cursor:pointer; background:linear-gradient(135deg,#fff1b8,#f2b94f 48%,#b8791d); box-shadow:0 10px 30px rgba(248,215,131,.18); transition:.18s transform,.18s filter,.18s opacity}
   button:hover{transform:translateY(-2px); filter:brightness(1.06)}
   button:disabled{opacity:.42; cursor:not-allowed; transform:none; filter:grayscale(.35)}
+  button.pulsing{animation:buttonPulse .72s ease both}
   button.secondary{color:var(--txt); background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.04)); border:1px solid rgba(248,215,131,.22)}
   main{display:grid; grid-template-columns:1fr 360px; gap:18px}
   .panel,.stats{padding:18px}
   .panel h2,.stats h2{margin:0 0 12px; font-size:20px; color:var(--gold)}
   .statGrid{display:grid; grid-template-columns:1fr; gap:10px}
   .stat{background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); padding:14px; border-radius:16px}
+  .stat.flash{animation:statFlash .9s ease both}
   .stat b{display:block; font-size:24px; color:var(--gold); margin-top:6px}
   .resultList{min-height:430px; display:grid; gap:16px}
   .revealStage{min-height:288px; border:1px dashed rgba(248,215,131,.25); border-radius:20px; display:grid; place-items:center; position:relative; overflow:hidden; perspective:900px; background:radial-gradient(circle at center, rgba(248,215,131,.08), rgba(255,255,255,.02) 50%, transparent 72%)}
@@ -52,6 +54,10 @@
   .revealStage:after{content:""; position:absolute; inset:-45%; background:linear-gradient(105deg, transparent 42%, rgba(255,244,199,.28), transparent 58%); opacity:0}
   .revealStage.animating:after{animation:lightSweep 1.05s ease-in-out infinite}
   .stageHint{position:relative; z-index:1; color:rgba(245,240,223,.42); text-align:center; padding:20px; line-height:1.7}
+  .buyBurst{position:relative; z-index:1; width:min(390px,90%); min-height:174px; display:grid; place-items:center; gap:12px; padding:24px; text-align:center; border-radius:22px; border:1px solid rgba(248,215,131,.38); background:linear-gradient(145deg, rgba(255,241,184,.14), rgba(13,18,34,.95)); box-shadow:0 0 56px rgba(248,215,131,.18); animation:packDrop .78s cubic-bezier(.18,.88,.22,1.16) both}
+  .buyBurst:before{content:""; width:74px; height:54px; border-radius:14px; border:2px solid rgba(248,215,131,.72); background:linear-gradient(135deg, rgba(255,241,184,.25), rgba(248,215,131,.06)); box-shadow:inset 0 0 18px rgba(248,215,131,.18), 0 0 28px rgba(248,215,131,.22)}
+  .buyBurst b{font-size:24px; color:#fff4c7}
+  .buyBurst span{color:var(--muted); font-size:13px}
   .revealCard{position:relative; z-index:1; width:min(430px,92%); min-height:198px; display:grid; align-content:center; gap:12px; padding:24px; border-radius:22px; border:1px solid rgba(248,215,131,.44); background:linear-gradient(145deg, rgba(255,241,184,.16), rgba(21,28,48,.94) 42%, rgba(8,10,22,.96)); box-shadow:0 18px 60px rgba(0,0,0,.28), 0 0 42px rgba(248,215,131,.2); text-align:center; transform-style:preserve-3d; overflow:hidden}
   .revealCard:before{content:""; position:absolute; inset:0; background:linear-gradient(120deg, transparent 10%, rgba(255,255,255,.16), transparent 34%); transform:translateX(-120%); opacity:.85}
   .revealCard.spinning{animation:cardShuffle .72s ease both}
@@ -92,6 +98,9 @@
   @keyframes cardShine{to{transform:translateX(130%)}}
   @keyframes cardShuffle{0%{opacity:.35; transform:translateY(20px) scale(.86) rotateY(76deg); filter:blur(4px)}55%{opacity:1; transform:translateY(0) scale(1.04) rotateY(-10deg); filter:blur(0)}100%{opacity:1; transform:translateY(0) scale(1) rotateY(0)}}
   @keyframes cardReveal{0%{opacity:.75; transform:rotateY(92deg) scale(.92); filter:brightness(1.4) blur(2px)}54%{opacity:1; transform:rotateY(-8deg) scale(1.06); box-shadow:0 0 88px rgba(248,215,131,.46)}100%{opacity:1; transform:rotateY(0) scale(1); filter:brightness(1) blur(0); box-shadow:0 18px 60px rgba(0,0,0,.28), 0 0 42px rgba(248,215,131,.2)}}
+  @keyframes packDrop{0%{opacity:0; transform:translateY(-22px) scale(.82); filter:blur(3px)}58%{opacity:1; transform:translateY(4px) scale(1.05); filter:blur(0)}100%{opacity:1; transform:translateY(0) scale(1)}}
+  @keyframes buttonPulse{0%{box-shadow:0 10px 30px rgba(248,215,131,.18)}50%{box-shadow:0 0 0 7px rgba(248,215,131,.18), 0 16px 42px rgba(248,215,131,.26)}100%{box-shadow:0 10px 30px rgba(248,215,131,.18)}}
+  @keyframes statFlash{0%{border-color:rgba(255,255,255,.08); background:rgba(255,255,255,.045)}45%{border-color:rgba(248,215,131,.58); background:rgba(248,215,131,.12)}100%{border-color:rgba(255,255,255,.08); background:rgba(255,255,255,.045)}}
   @media(max-width:560px){.statGrid{grid-template-columns:1fr}.hero{padding:22px}.money{text-align:left}}
 </style>
 </head>
@@ -267,6 +276,13 @@ function updateStats(){
 function setStatus(msg){
   $("#statusLine").textContent = msg || "";
 }
+function flashStats(){
+  document.querySelectorAll(".stat").forEach(stat => {
+    stat.classList.remove("flash");
+    void stat.offsetWidth;
+    stat.classList.add("flash");
+  });
+}
 function renderResults(stageHtml = ""){
   const box = $("#results");
   const stage = stageHtml || '<div class="stageHint">购买后不会立即展示结果。<br>点击这里，结果会在这里揭晓。</div>';
@@ -291,12 +307,26 @@ function renderGroups(){
     return `<details ${index < 2 ? "open" : ""}><summary>${esc(pool.title)}｜抽 ${pool.draw} 次｜权重合计 ${sum}%${pool.nonSale ? "｜非卖品" : ""}</summary><table><thead><tr><th>商品</th><th>零售价</th><th>权重</th></tr></thead><tbody>${rows}</tbody></table></details>`;
   }).join("");
 }
-function buy(){
+async function buy(){
+  if(animationBusy) return;
+  animationBusy = true;
+  current = [];
+  revealed = [];
+  bank = 0;
+  $("#buyBtn").classList.add("pulsing");
+  $("#buyBtn").textContent = "购买中...";
+  setStatus("正在购买一包...");
+  renderResults('<div class="buyBurst"><b>福袋已购入</b><span>正在把结果写入后台</span></div>');
+  updateStats();
+  await new Promise(resolve => setTimeout(resolve, 520));
   current = makePack();
   revealed = [];
   bank = 0;
+  animationBusy = false;
+  $("#buyBtn").classList.remove("pulsing");
   renderResults();
   updateStats();
+  flashStats();
   setStatus(`已购买 ${current.length} 件，结果已进入后台。点击拆包区域开始揭晓。`);
 }
 function revealAnimation(pick){
